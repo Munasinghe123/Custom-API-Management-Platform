@@ -1,0 +1,12 @@
+{
+  "get-employee-details": {
+    "procedure": "hr.pkg_employee.get_employee_details",
+    "db": {
+      "user": "system",
+      "password": "admin",
+      "host": "10.207.130.26",
+      "port": 1521,
+      "service": "ORCLPRD"
+    }
+  }
+}
