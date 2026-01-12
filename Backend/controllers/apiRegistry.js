@@ -8,22 +8,29 @@ function loadRegistry() {
     return JSON.parse(raw);
 }
 
-const getApiConfig = (req, res) => {
-    const { apiName } = req.params;
+function executeApi(req, res) {
+  const { apiname } = req.params;
+  const inputParams = req.body;
 
-    const registry = loadRegistry();
+  const registry = loadRegistry();
 
-    const key = Object.keys(registry).find(
-        k => k.toLowerCase() === apiName.toLowerCase()
-    );
+  const key = Object.keys(registry).find(
+    k => k.toLowerCase() === apiname.toLowerCase()
+  );
 
-    if (!key) {
-        return res.status(404).json({ error: 'API not found' });
-    }
+  if (!key) {
+    return res.status(404).json({ error: 'API not found' });
+  }
 
-    return res.json(registry[key]);
+  return res.json({
+    api: key,
+    procedure: registry[key].procedure,
+    db: registry[key].db,
+    receivedParams: inputParams
+  });
 }
 
+
 module.exports = {
-    loadRegistry, getApiConfig
+    loadRegistry, executeApi
 }

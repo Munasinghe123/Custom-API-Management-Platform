@@ -1,8 +1,8 @@
-const{loadRegistry,getApiConfig} = require('../controllers/apiRegistry');
+const{loadRegistry,executeApi} = require('../controllers/apiRegistry');
 const express = require('express');
 const router = express.Router();
 
-router.get('/test/:apiname',getApiConfig);
+router.post('/:apiname',executeApi);
 
 module.exports = router;
 
