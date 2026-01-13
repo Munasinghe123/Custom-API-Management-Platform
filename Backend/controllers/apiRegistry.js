@@ -1,14 +1,16 @@
 const fs = require('fs');
 const path = require('path');
+const { getConnection } = require('../config/oracle')
+
 
 const CONFIG_PATH = path.join(__dirname, "../config/api-config.json");
 
 function loadRegistry() {
-    const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
-    return JSON.parse(raw);
+  const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
+  return JSON.parse(raw);
 }
 
-function executeApi(req, res) {
+async  function executeApi (req, res){
   const { apiname } = req.params;
   const inputParams = req.body;
 
@@ -17,20 +19,28 @@ function executeApi(req, res) {
   const key = Object.keys(registry).find(
     k => k.toLowerCase() === apiname.toLowerCase()
   );
+  let connection;
 
-  if (!key) {
-    return res.status(404).json({ error: 'API not found' });
+  try {
+    connection = await getConnection();
+
+    const result = await connection.execute(
+      `BEGIN ${apiConfig.procedure}(:emp_id); END;`,
+      inputParams
+    );
+
+    res.json(result.rows || []);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'DB execution failed' });
+  } finally {
+    if (connection) await connection.close();
   }
 
-  return res.json({
-    api: key,
-    procedure: registry[key].procedure,
-    db: registry[key].db,
-    receivedParams: inputParams
-  });
 }
 
 
 module.exports = {
-    loadRegistry, executeApi
+  loadRegistry, executeApi
 }
