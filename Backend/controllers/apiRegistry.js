@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { getConnection } = require('../config/oracle')
+const oracledb = require('oracledb');
 
 
 const CONFIG_PATH = path.join(__dirname, "../config/api-config.json");
@@ -10,7 +11,7 @@ function loadRegistry() {
   return JSON.parse(raw);
 }
 
-async  function executeApi (req, res){
+async function executeApi(req, res) {
   const { apiname } = req.params;
   const inputParams = req.body;
 
@@ -19,17 +20,32 @@ async  function executeApi (req, res){
   const key = Object.keys(registry).find(
     k => k.toLowerCase() === apiname.toLowerCase()
   );
+
+  if (!key) {
+    return res.status(404).json({ error: 'API not found' });
+  }
+
+  const apiConfig = registry[key];
   let connection;
 
   try {
     connection = await getConnection();
 
     const result = await connection.execute(
-      `BEGIN ${apiConfig.procedure}(:emp_id); END;`,
-      inputParams
+      `BEGIN ${apiConfig.procedure}(:emp_no, :name, :status); END;`,
+      {
+        emp_no: inputParams.emp_no,
+        name: { dir: oracledb.BIND_OUT, type: oracledb.STRING },
+        status: { dir: oracledb.BIND_OUT, type: oracledb.STRING }
+      }
     );
 
-    res.json(result.rows || []);
+    res.json({
+      emp_no: inputParams.emp_no,
+      name: result.outBinds.name,
+      status: result.outBinds.status
+    });
+
 
   } catch (err) {
     console.error(err);
@@ -37,8 +53,8 @@ async  function executeApi (req, res){
   } finally {
     if (connection) await connection.close();
   }
-
 }
+
 
 
 module.exports = {

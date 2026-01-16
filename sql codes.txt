@@ -1,0 +1,27 @@
+CREATE TABLE employees(
+
+   emp_no VARCHAR2(5) PRIMARY KEY,
+   emp_name VARCHAR2(20),
+   status VARCHAR2(20)
+)
+
+INSERT INTO employees (emp_no, emp_name, status)
+VALUES ('101', 'John Doe', 'ACTIVE');
+
+INSERT INTO employees (emp_no, emp_name, status)
+VALUES ('102', 'Jane Smith', 'INACTIVE');
+
+COMMIT;
+
+CREATE OR REPLACE PROCEDURE get_employee_details (
+  p_emp_no   IN  VARCHAR2,
+  p_name     OUT VARCHAR2,
+  p_status   OUT VARCHAR2
+) AS
+BEGIN
+  SELECT emp_name, status
+  INTO p_name, p_status
+  FROM employees
+  WHERE emp_no = p_emp_no;
+END;
+/

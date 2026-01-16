@@ -4,19 +4,19 @@ oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
 
 let pool;
 
-async function initOraclePool(dbConfig) {
+async function initOraclePool() {
   if (pool) return pool;
 
   pool = await oracledb.createPool({
-    user: dbConfig.user,
-    password: dbConfig.password,
-    connectString: `${dbConfig.host}:${dbConfig.port}/${dbConfig.service}`,
+    user: process.env.ORACLE_USER,
+    password: process.env.ORACLE_PASSWORD,
+    connectString: `${process.env.ORACLE_HOST}:${process.env.ORACLE_PORT}/${process.env.ORACLE_SERVICE}`,
     poolMin: 1,
     poolMax: 5,
     poolIncrement: 1
   });
 
-  console.log('Oracle connection pool created');
+  console.log('Oracle connection pool initialized');
   return pool;
 }
 
