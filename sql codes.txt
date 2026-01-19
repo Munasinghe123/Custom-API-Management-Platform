@@ -2,25 +2,34 @@ CREATE TABLE employees(
 
    emp_no VARCHAR2(5) PRIMARY KEY,
    emp_name VARCHAR2(20),
-   status VARCHAR2(20)
+   password_hash VARCHAR2(255) NOT NULL,
+   status VARCHAR2(20) DEFAULT 'ACTIVE',
+   role          VARCHAR2(20) DEFAULT 'USER',
+);
+
+INSERT INTO employees (
+  emp_no, emp_name, password_hash, role, status
 )
-
-INSERT INTO employees (emp_no, emp_name, status)
-VALUES ('101', 'John Doe', 'ACTIVE');
-
-INSERT INTO employees (emp_no, emp_name, status)
-VALUES ('102', 'Jane Smith', 'INACTIVE');
+VALUES (
+  emp_no_seq.NEXTVAL,
+  'John Doe',
+  'dummy_hash',
+  'USER',
+  'ACTIVE'
+);
 
 COMMIT;
+
 
 CREATE OR REPLACE PROCEDURE get_employee_details (
   p_emp_no   IN  VARCHAR2,
   p_name     OUT VARCHAR2,
-  p_status   OUT VARCHAR2
+  p_status   OUT VARCHAR2,
+  p_role     OUT VARCHAR2
 ) AS
 BEGIN
-  SELECT emp_name, status
-  INTO p_name, p_status
+  SELECT emp_name, status, role
+  INTO p_name, p_status , p_role
   FROM employees
   WHERE emp_no = p_emp_no;
 END;

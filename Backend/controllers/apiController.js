@@ -32,18 +32,20 @@ async function executeApi(req, res) {
     connection = await getConnection();
 
     const result = await connection.execute(
-      `BEGIN ${apiConfig.procedure}(:emp_no, :name, :status); END;`,
+      `BEGIN ${apiConfig.procedure}(:emp_no, :name, :status, :role); END;`,
       {
         emp_no: inputParams.emp_no,
         name: { dir: oracledb.BIND_OUT, type: oracledb.STRING },
-        status: { dir: oracledb.BIND_OUT, type: oracledb.STRING }
+        status: { dir: oracledb.BIND_OUT, type: oracledb.STRING },
+        role: { dir: oracledb.BIND_OUT, type: oracledb.STRING }
       }
     );
 
     res.json({
       emp_no: inputParams.emp_no,
       name: result.outBinds.name,
-      status: result.outBinds.status
+      status: result.outBinds.status,
+      role: result.outBinds.role
     });
 
 

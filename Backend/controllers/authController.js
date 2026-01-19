@@ -44,7 +44,7 @@ const login = async (req, res) => {
     }
 
     const accessToken = jwt.sign(
-      { EMP_NO, ROLE },
+      { EMP_NO,EMP_NAME, ROLE },
       process.env.JWT_SECRET,
       { expiresIn: '7h' }
     );

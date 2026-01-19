@@ -3,9 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { initOraclePool } = require('./config/oracle')
-const registry = require('./config/api-config.json');
 
-const apiRoutes = require('./routes/apiRegistry-routes');
+const apiRoutes = require('./routes/apiController-routes');
 const authRoutes= require('./routes/auth-routes');
 
 const port = process.env.PORT || 7001;
