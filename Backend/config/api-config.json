@@ -1,5 +1,32 @@
 {
   "get-employee-details": {
-    "procedure": "get_employee_details"
+    "procedure": "get_employee_details",
+    "db": {
+      "user": "system",
+      "password": "admin",
+      "host": "localhost",
+      "port": 1521,
+      "service": "XE"
+    }
+  },
+  "testing api": {
+    "procedure": "testing",
+    "db": {
+      "user": "bro",
+      "password": "bro",
+      "host": "localhost",
+      "port": "1521",
+      "service": "XE"
+    }
+  },
+  "testing api again": {
+    "procedure": "testing again",
+    "db": {
+      "user": "system",
+      "password": "admin",
+      "host": "localhost",
+      "port": "1521",
+      "service": "XE"
+    }
   }
 }

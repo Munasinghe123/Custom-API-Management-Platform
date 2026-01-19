@@ -1,10 +1,10 @@
-const{executeApi} = require('../controllers/apiController');
+
+const{createApi} = require('../controllers/adminApiController');
 const express = require('express');
 const router = express.Router();
 const verifyToken  = require('../middleware/VerifyAccessToken')
 
-router.post('/:apiname',executeApi);
-
+router.post('/create-api',createApi);
 
 module.exports = router;
 

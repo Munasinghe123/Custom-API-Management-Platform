@@ -29,7 +29,11 @@ async function executeApi(req, res) {
   let connection;
 
   try {
-    connection = await getConnection();
+    connection = await oracledb.getConnection({
+      user: apiConfig.db.user,
+      password: apiConfig.db.password,
+      connectString: `${apiConfig.db.host}:${apiConfig.db.port}/${apiConfig.db.service}`
+    });
 
     const result = await connection.execute(
       `BEGIN ${apiConfig.procedure}(:emp_no, :name, :status, :role); END;`,
@@ -56,8 +60,6 @@ async function executeApi(req, res) {
     if (connection) await connection.close();
   }
 }
-
-
 
 module.exports = {
   loadRegistry, executeApi

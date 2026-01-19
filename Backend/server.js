@@ -6,6 +6,7 @@ const { initOraclePool } = require('./config/oracle')
 
 const apiRoutes = require('./routes/apiController-routes');
 const authRoutes= require('./routes/auth-routes');
+const adminApiRoutes= require('./routes/adminApi-routes');
 
 const port = process.env.PORT || 7001;
 const app = express();
@@ -23,6 +24,7 @@ app.use(cors());
 
 app.use('/api', apiRoutes);
 app.use('/auth', authRoutes);
+app.use('/admin', adminApiRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
