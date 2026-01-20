@@ -20,36 +20,26 @@ VALUES (
 
 COMMIT;
 
-CREATE OR REPLACE PROCEDURE get_employee_details (
-  p_input  IN  CLOB,
-  p_output OUT CLOB
-) AS
-  v_emp_no  employees.emp_no%TYPE;
-  v_name    employees.emp_name%TYPE;
-  v_status  employees.status%TYPE;
-  v_role    employees.role%TYPE;
+//get by id
+CREATE OR REPLACE PROCEDURE get_employee_by_id (
+  p_emp_no IN VARCHAR2,
+  p_result OUT SYS_REFCURSOR
+) IS
 BEGIN
-  -- Parse input JSON
-  v_emp_no := JSON_VALUE(p_input, '$.emp_no');
-
-  SELECT emp_name, status, role
-  INTO v_name, v_status, v_role
-  FROM employees
-  WHERE emp_no = v_emp_no;
-
-  -- Build output JSON
-  p_output := JSON_OBJECT(
-    'emp_no' VALUE v_emp_no,
-    'name'   VALUE v_name,
-    'status' VALUE v_status,
-    'role'   VALUE v_role
-  );
-
-EXCEPTION
-  WHEN NO_DATA_FOUND THEN
-    p_output := JSON_OBJECT(
-      'error' VALUE 'Employee not found'
-    );
+  OPEN p_result FOR
+    SELECT emp_name, status, role
+    FROM employees
+    WHERE emp_no = p_emp_no;
 END;
 /
 
+//get all
+CREATE OR REPLACE PROCEDURE get_all_employees (
+  p_result OUT SYS_REFCURSOR
+) IS
+BEGIN
+  OPEN p_result FOR
+    SELECT emp_no, emp_name, status, role
+    FROM employees;
+END;
+/
