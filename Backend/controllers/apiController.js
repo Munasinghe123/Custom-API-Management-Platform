@@ -1,11 +1,33 @@
-const fs = require('fs');
-const path = require('path');
-const oracledb = require('oracledb');
+const oracledb = require("oracledb");
+const { getConnection } = require("../config/oracle");
 
-const CONFIG_PATH = path.join(__dirname, "../config/api-config.json");
+async function getApiConfig(apiName) {
+  const conn = await getConnection();
 
-function loadRegistry() {
-  return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8"));
+  const result = await conn.execute(
+    `
+    SELECT
+      p.procedure_name,
+      d.db_user,
+      d.db_password,
+      d.db_host,
+      d.db_port,
+      d.db_service
+    FROM procedures p
+    JOIN procedure_db_config d
+      ON p.procedure_id = d.procedure_id
+    WHERE p.api_name = :apiName
+      AND p.status = 'ACTIVE'
+    `,
+    { apiName },
+    { outFormat: oracledb.OUT_FORMAT_OBJECT }
+  );
+
+  await conn.close();
+
+  if (result.rows.length === 0) return null;
+
+  return result.rows[0];
 }
 
 async function executeApi(req, res) {
@@ -18,34 +40,32 @@ async function executeApi(req, res) {
   }
 
   const keys = Object.keys(data);
-
   if (keys.length !== 1) {
     return res.status(400).json({
       error: "Exactly one input field is required"
     });
   }
 
-  const value = data[keys[0]]; // extract the ID safely
+  const value = data[keys[0]];
 
-  const registry = loadRegistry();
-  const api = registry[apiName];
+  const api = await getApiConfig(apiName);
 
   if (!api) {
-    return res.status(404).json({ error: "API not found" });
+    return res.status(404).json({ error: "API not found or inactive" });
   }
 
   let connection;
 
   try {
     connection = await oracledb.getConnection({
-      user: api.db.user,
-      password: api.db.password,
-      connectString: `${api.db.host}:${api.db.port}/${api.db.service}`
+      user: api.DB_USER,
+      password: api.DB_PASSWORD,
+      connectString: `${api.DB_HOST}:${api.DB_PORT}/${api.DB_SERVICE}`
     });
 
     const result = await connection.execute(
       `
-      BEGIN SYSTEM.${api.procedure}(
+      BEGIN ${api.PROCEDURE_NAME}(
         :value,
         :cursor
       );
@@ -75,6 +95,7 @@ async function executeApi(req, res) {
     if (connection) await connection.close();
   }
 }
+
 
 
 module.exports = { executeApi };

@@ -1,92 +1,149 @@
-const fs = require('fs');
-const path = require('path');
+const { getConnection } = require('../config/oracle');
 
-const CONFIG_PATH = path.join(__dirname, '../config/api-config.json');
-
-function loadRegistry() {
-  const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
-  return JSON.parse(raw);
-}
-
-function saveRegistry(config) {
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
-}
-
+/**
+ * CREATE API (Admin)
+ */
 async function createApi(req, res) {
+  const {
+    apiName,
+    procedure,
+    dbUser,
+    dbPassword,
+    dbHost,
+    dbPort,
+    serviceName
+  } = req.body;
+
+  if (
+    !apiName ||
+    !procedure ||
+    !dbUser ||
+    !dbPassword ||
+    !dbHost ||
+    !dbPort ||
+    !serviceName
+  ) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  let conn;
+
   try {
-    const {
-      apiName,
-      procedure,
-      dbUser,
-      dbPassword,
-      dbHost,
-      dbPort,
-      serviceName
-    } = req.body;
+    conn = await getConnection();
 
-    if (
-      !apiName ||
-      !procedure ||
-      !dbUser ||
-      !dbPassword ||
-      !dbHost ||
-      !dbPort ||
-      !serviceName
-    ) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
+    // 1️⃣ Check if API already exists
+    const exists = await conn.execute(
+      `SELECT 1 FROM procedures WHERE api_name = :apiName`,
+      { apiName }
+    );
 
-    const registry = loadRegistry();
-
-    if (registry[apiName]) {
+    if (exists.rows.length > 0) {
       return res.status(409).json({ message: 'API already exists' });
     }
 
-    registry[apiName] = {
-      procedure,
-      db: {
-        user: dbUser,
-        password: dbPassword,
-        host: dbHost,
-        port: dbPort,
-        service: serviceName
-      }
-    };
+    // 2️⃣ Insert into procedures
+    const oracledb = require('oracledb');
 
-    saveRegistry(registry);
+    const procResult = await conn.execute(
+      `
+  INSERT INTO procedures (api_name, procedure_name, status)
+  VALUES (:apiName, :procedure, 'ACTIVE')
+  RETURNING procedure_id INTO :id
+  `,
+      {
+        apiName,
+        procedure,
+        id: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
+      }
+    );
+
+
+    const procedureId = procResult.outBinds.id[0];
+
+    // 3️⃣ Insert DB config
+    await conn.execute(
+      `
+      INSERT INTO procedure_db_config (
+        procedure_id,
+        db_user,
+        db_password,
+        db_host,
+        db_port,
+        db_service
+      )
+      VALUES (
+        :procedureId,
+        :dbUser,
+        :dbPassword,
+        :dbHost,
+        :dbPort,
+        :serviceName
+      )
+      `,
+      {
+        procedureId,
+        dbUser,
+        dbPassword,
+        dbHost,
+        dbPort,
+        serviceName
+      }
+    );
+
+    await conn.commit();
 
     res.status(201).json({
       message: 'API created successfully',
-      api: apiName
+      apiName
     });
 
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to create API' });
+  } finally {
+    if (conn) await conn.close();
   }
 }
 
+/**
+ * GET ALL APIS (Admin)
+ */
 async function getApis(req, res) {
+  let conn;
+
   try {
-    const registry = loadRegistry();
+    conn = await getConnection();
 
-    const apis = Object.keys(registry).map(apiName => ({
-      apiName,
-      procedure: registry[apiName].procedure,
-      dbUser: registry[apiName].db?.user,
-      host: registry[apiName].db?.host,
-      port: registry[apiName].db?.port,
-      service: registry[apiName].db?.service
-    }));
+    const result = await conn.execute(
+      `
+      SELECT
+        p.api_name,
+        p.procedure_name,
+        d.db_user,
+        d.db_host,
+        d.db_port,
+        d.db_service,
+        p.status
+      FROM procedures p
+      JOIN procedure_db_config d
+        ON p.procedure_id = d.procedure_id
+      ORDER BY p.api_name
+      `,
+      {},
+      { outFormat: conn.OUT_FORMAT_OBJECT }
+    );
 
-    res.json(apis);
+    res.json(result.rows);
 
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to load APIs' });
+  } finally {
+    if (conn) await conn.close();
   }
 }
 
 module.exports = {
-  createApi,getApis
+  createApi,
+  getApis
 };
