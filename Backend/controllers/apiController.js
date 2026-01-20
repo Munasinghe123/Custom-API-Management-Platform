@@ -11,12 +11,24 @@ function loadRegistry() {
   return JSON.parse(raw);
 }
 
+async function clobToString(clob) {
+  if (clob === null) return null;
+
+  if (typeof clob === 'string') return clob;
+
+  let result = '';
+  for await (const chunk of clob) {
+    result += chunk;
+  }
+  return result;
+}
+
+
 async function executeApi(req, res) {
   const { apiname } = req.params;
   const inputParams = req.body;
 
   const registry = loadRegistry();
-
   const key = Object.keys(registry).find(
     k => k.toLowerCase() === apiname.toLowerCase()
   );
@@ -36,22 +48,16 @@ async function executeApi(req, res) {
     });
 
     const result = await connection.execute(
-      `BEGIN ${apiConfig.procedure}(:emp_no, :name, :status, :role); END;`,
+      `BEGIN ${apiConfig.procedure}(:input, :output); END;`,
       {
-        emp_no: inputParams.emp_no,
-        name: { dir: oracledb.BIND_OUT, type: oracledb.STRING },
-        status: { dir: oracledb.BIND_OUT, type: oracledb.STRING },
-        role: { dir: oracledb.BIND_OUT, type: oracledb.STRING }
+        input: JSON.stringify(inputParams),
+        output: { dir: oracledb.BIND_OUT, type: oracledb.CLOB }
       }
     );
 
-    res.json({
-      emp_no: inputParams.emp_no,
-      name: result.outBinds.name,
-      status: result.outBinds.status,
-      role: result.outBinds.role
-    });
+    const outputJson = await clobToString(result.outBinds.output);
 
+    res.json(JSON.parse(outputJson));
 
   } catch (err) {
     console.error(err);
@@ -60,6 +66,7 @@ async function executeApi(req, res) {
     if (connection) await connection.close();
   }
 }
+
 
 module.exports = {
   loadRegistry, executeApi

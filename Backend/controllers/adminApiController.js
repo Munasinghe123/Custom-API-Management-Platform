@@ -66,6 +66,27 @@ async function createApi(req, res) {
   }
 }
 
+async function getApis(req, res) {
+  try {
+    const registry = loadRegistry();
+
+    const apis = Object.keys(registry).map(apiName => ({
+      apiName,
+      procedure: registry[apiName].procedure,
+      dbUser: registry[apiName].db?.user,
+      host: registry[apiName].db?.host,
+      port: registry[apiName].db?.port,
+      service: registry[apiName].db?.service
+    }));
+
+    res.json(apis);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to load APIs' });
+  }
+}
+
 module.exports = {
-  createApi
+  createApi,getApis
 };
