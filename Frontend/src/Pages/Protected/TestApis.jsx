@@ -5,7 +5,10 @@ function TestApis() {
     const [api, setApi] = useState("");
     const [data, setData] = useState("");
     const [response, setResponse] = useState("");
-    const [requestBody, setRequestBody] = useState("{}");
+    const [httpMethod, setHttpMethod] = useState("");
+
+
+    console.log("METHOD:", httpMethod);
 
     const submit = async (e) => {
         e.preventDefault();
@@ -22,20 +25,33 @@ function TestApis() {
                 parsedData = JSON.parse(data);
             }
 
-            const res = await axios.post(
-                "http://localhost:7000/api/execute-api",
-                {
-                    apiName: api,
-                    data: parsedData
-                },
-                {
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                }
-            );
+            if (httpMethod === "GET") {
 
-            setResponse(JSON.stringify(res.data, null, 2));
+                const res = await axios.get(
+                    `http://localhost:7000/api/get-all/${api}`);
+
+                setResponse(JSON.stringify(res.data, null, 2));
+                return;
+            } else if (httpMethod === "POST") {
+                const res = await axios.post(
+                    "http://localhost:7000/api/execute-api",
+                    {
+                        apiName: api,
+                        data: parsedData
+                    },
+                    {
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    }
+                );
+                setResponse(JSON.stringify(res.data, null, 2));
+            } else {
+                setResponse("Error: Select HTTP method");
+                return;
+            }
+
+
         } catch (error) {
             console.error(error);
 
@@ -67,6 +83,20 @@ function TestApis() {
                         onChange={(e) => setApi(e.target.value)}
                         className="border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
+                </div>
+
+                <div className='flex flex-col w-1/3 space-y-2'>
+                    <label className="text-sm font-medium text-gray-600">
+                        Select HTTP Method
+                    </label>
+                    <select
+                        value={httpMethod}
+                        onChange={(e) => setHttpMethod(e.target.value)}
+                        className="border border-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 rounded px-3 py-2 text-gray-400">
+                        <option value="" disabled hidden>HTTP method</option>
+                        <option value="GET" className="text-black">GET</option>
+                        <option value="POST" className="text-black">POST</option>
+                    </select>
                 </div>
 
                 <div className="flex flex-col gap-1">

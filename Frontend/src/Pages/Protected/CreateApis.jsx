@@ -11,6 +11,7 @@ function CreateApis() {
   const [dbHost, setDbHost] = useState("")
   const [dbPort, setDbPort] = useState("")
   const [serviceName, setServiceName] = useState("")
+  const [httpMethod, setHttpMethod] = useState("")
   const [loading, setLoading] = useState(false)
 
   const createApi = async (e) => {
@@ -20,6 +21,7 @@ function CreateApis() {
     try {
       await axios.post('http://localhost:7000/admin/create-api', {
         apiName,
+        httpMethod,
         procedure,
         dbUser,
         dbPassword,
@@ -32,11 +34,11 @@ function CreateApis() {
       setApiName("");
       setProcedure("");
       setDbUser("");
-      setDbPassword(""); 
+      setDbPassword("");
       setDbHost("");
       setDbPort("");
       setServiceName("");
-      
+
 
     } catch (err) {
       console.error(err)
@@ -70,6 +72,18 @@ function CreateApis() {
             <CircleQuestionMark size={28} className="text-purple-600" />
           </div>
 
+          <div className='flex space-x-3'>
+            <select
+              value={httpMethod}
+              onChange={(e) => setHttpMethod(e.target.value)}
+              className="border border-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 rounded px-3 py-2 text-gray-400">
+              <option value="" disabled hidden>HTTP method</option>
+              <option value="GET" className="text-black">GET</option>
+              <option value="POST" className="text-black">POST</option>
+              <option value="PUT" className="text-black">PUT</option>
+              <option value="DELETE" className="text-black">DELETE</option>
+            </select>
+          </div>
           <div className="flex space-x-3">
             <input
               type="text"

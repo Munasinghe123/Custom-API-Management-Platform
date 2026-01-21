@@ -1,11 +1,9 @@
 const { getConnection } = require('../config/oracle');
 
-/**
- * CREATE API (Admin)
- */
 async function createApi(req, res) {
   const {
     apiName,
+    httpMethod,
     procedure,
     dbUser,
     dbPassword,
@@ -14,8 +12,12 @@ async function createApi(req, res) {
     serviceName
   } = req.body;
 
+  console.log("CREATE API BODY:", req.body);
+
+
   if (
     !apiName ||
+    !httpMethod ||
     !procedure ||
     !dbUser ||
     !dbPassword ||
@@ -31,7 +33,7 @@ async function createApi(req, res) {
   try {
     conn = await getConnection();
 
-    // 1️⃣ Check if API already exists
+    // 1Check if API already exists
     const exists = await conn.execute(
       `SELECT 1 FROM procedures WHERE api_name = :apiName`,
       { apiName }
@@ -41,7 +43,7 @@ async function createApi(req, res) {
       return res.status(409).json({ message: 'API already exists' });
     }
 
-    // 2️⃣ Insert into procedures
+    //  Insert into procedures
     const oracledb = require('oracledb');
 
     const procResult = await conn.execute(
@@ -60,11 +62,12 @@ async function createApi(req, res) {
 
     const procedureId = procResult.outBinds.id[0];
 
-    // 3️⃣ Insert DB config
+    //  Insert DB config
     await conn.execute(
       `
       INSERT INTO procedure_db_config (
         procedure_id,
+        db_httpMethod,
         db_user,
         db_password,
         db_host,
@@ -73,6 +76,7 @@ async function createApi(req, res) {
       )
       VALUES (
         :procedureId,
+        :httpMethod,
         :dbUser,
         :dbPassword,
         :dbHost,
@@ -82,6 +86,7 @@ async function createApi(req, res) {
       `,
       {
         procedureId,
+        httpMethod,
         dbUser,
         dbPassword,
         dbHost,
@@ -105,9 +110,7 @@ async function createApi(req, res) {
   }
 }
 
-/**
- * GET ALL APIS (Admin)
- */
+
 async function getApis(req, res) {
   let conn;
 

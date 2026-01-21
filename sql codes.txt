@@ -34,15 +34,16 @@ END;
 /
 
 //get all
-CREATE OR REPLACE PROCEDURE get_all_employees (
-  p_result OUT SYS_REFCURSOR
-) IS
+CREATE OR REPLACE PROCEDURE get_all_users (
+  p_cursor OUT SYS_REFCURSOR
+) AS
 BEGIN
-  OPEN p_result FOR
+  OPEN p_cursor FOR
     SELECT emp_no, emp_name, status, role
     FROM employees;
 END;
 /
+
 
 // api TABLE
 

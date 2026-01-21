@@ -96,6 +96,59 @@ async function executeApi(req, res) {
   }
 }
 
+async function getAll(req, res) {
+  
+    const { apiName } = req.params;
 
+    if (!apiName) {
+      return res.status(400).json({ error: "apiName is required" });
+    }
 
-module.exports = { executeApi };
+    const api = await getApiConfig(apiName);
+
+    if (!api) {
+      return res.status(404).json({ error: "API not found or inactive" });
+    }
+
+    let connection;
+
+    try {
+      connection = await oracledb.getConnection({
+        user: api.DB_USER,
+        password: api.DB_PASSWORD,
+        connectString: `${api.DB_HOST}:${api.DB_PORT}/${api.DB_SERVICE}`
+      });
+
+      const result = await connection.execute(
+        `
+      BEGIN ${api.PROCEDURE_NAME}(
+        :cursor
+      );
+      END;
+      `,
+        {
+          cursor: { dir: oracledb.BIND_OUT, type: oracledb.CURSOR }
+        }
+      );
+
+      const rs = result.outBinds.cursor;
+      const rows = [];
+
+      let row;
+      while ((row = await rs.getRow())) {
+        rows.push(row);
+      }
+
+      await rs.close();
+
+      res.json(rows);
+
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: "Database connection failed" });
+    } finally {
+      if (connection) await connection.close();
+    }
+}
+
+module.exports = { executeApi, getAll };
